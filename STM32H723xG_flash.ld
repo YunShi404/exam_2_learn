@@ -251,4 +251,8 @@ SECTIONS
     libgcc.a:* ( * )
   }
 
+    .ram_d3_buf :
+    {
+      *(.ram_d3_buf)   /* 收集所有带了 ".ram_d3_buf" 标签的变量 */
+    } >RAM_D3          /* 把它们全都扔进上面定义好的 RAM_D3 仓库 (0x38000000) */
 }
