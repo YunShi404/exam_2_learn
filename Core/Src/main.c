@@ -20,8 +20,9 @@
 #include "main.h"
 #include "bdma.h"
 #include "spi.h"
+#include "tim.h"
 #include "gpio.h"
-
+#include "buzzer.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "led.h"
@@ -101,6 +102,7 @@ int main(void)
   MX_GPIO_Init();
   MX_BDMA_Init();
   MX_SPI6_Init();
+  MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
