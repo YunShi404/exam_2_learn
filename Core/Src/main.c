@@ -19,15 +19,18 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "bdma.h"
+#include "dma.h"
 #include "spi.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
-#include "buzzer.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "led.h"
 #include<stdio.h>
 #include<string.h>
+#include "buzzer.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,8 +104,11 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_BDMA_Init();
+  MX_DMA_Init();
   MX_SPI6_Init();
   MX_TIM12_Init();
+  MX_USART1_UART_Init();
+  LED_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -113,7 +119,7 @@ int main(void)
   while (1)
   {
 
-  
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

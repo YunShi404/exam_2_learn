@@ -4,6 +4,10 @@
 
 #include "led.h"
 #include <stdint.h>
+
+#define LOW (0xC0 >> 1)
+#define HIGH (0xF0 >> 1)
+
 volatile uint8_t static led_transmit[24] RAM_D3_SECTION ;
 void LED(uint8_t R,uint8_t G,uint8_t B)
 {
@@ -13,34 +17,34 @@ void LED(uint8_t R,uint8_t G,uint8_t B)
     for (i = 0; i < 8; i++)
     {
         if (G & (0x80 >> i))
-            led_transmit[i] = 0xFC; // 逻辑 1
+            led_transmit[i] = HIGH; // 逻辑 1
         else
-            led_transmit[i] = 0xE0; // 逻辑 0
+            led_transmit[i] = LOW; // 逻辑 0
     }
 
     // 2. 处理红色 (Red) - 第 9~16 个字节
     for (i = 0; i < 8; i++)
     {
         if (R & (0x80 >> i))
-            led_transmit[8 + i] = 0xFC;
+            led_transmit[8 + i] = HIGH;
         else
-            led_transmit[8 + i] = 0xE0;
+            led_transmit[8 + i] = LOW;
     }
 
     // 3. 处理蓝色 (Blue) - 第 17~24 个字节
     for (i = 0; i < 8; i++)
     {
         if (B & (0x80 >> i))
-            led_transmit[16 + i] = 0xFC;
+            led_transmit[16 + i] = HIGH;
         else
-            led_transmit[16 + i] = 0xE0;
+            led_transmit[16 + i] = LOW;
     }
 
     // 4. 启动 DMA 发送 24 个字节
     HAL_SPI_Transmit_DMA(&hspi6, (uint8_t *)led_transmit, 24);
 
     // 5. 延时等待 WS2812 锁存（RESET信号）
-    HAL_Delay(1);
+    HAL_Delay(100);
 }
 
 
