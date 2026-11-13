@@ -24,4 +24,5 @@ typedef struct
 
 void UART_init(UART_HandleTypeDef *huart);
 void UART_DMA_Transmit(UART_HandleTypeDef *huart, uint8_t *data, uint32_t size);
+void UART_printf_Transmit(UART_HandleTypeDef* huart, const char* format, ...);
 #endif //EXAM_2_LEARN_UART_H
