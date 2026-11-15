@@ -1,151 +1,173 @@
 //
-// Created by 30547 on 2026/11/13.
+// Created by 30547 on 2026/11/15.
 //
-
-
-
-#include "FreeRTOS.h"
+#include "freertos.h"
 #include "freertos_uart.h"
-#include "usart.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 #include "main.h"
 #include "led.h"
 #include "buzzer.h"
+#include <stdarg.h>
+
 #include "task.h"
-static Device Device_List[Device_num];
-void FreeRTOS_UART_init(UART_HandleTypeDef *huart)
+static Device Device_List[Device_num + 1];//这里加1是为了让数组能从一开始，0那个就不要了，为了能和串口id对上（串口从1开始而数组从0开始）
+
+//初始化函数：注册串口
+void UART_init(ID id, UART_HandleTypeDef *huart, p_data_process data_process_x)
 {
-    for (int i = 0; i < Device_num; i++)
-    {
-        if (Device_List[i].huart == NULL)
-        {
-            Device_List[i].huart = huart;
-            Device_List[i].TX_DMA_busy = 0;
-            Device_List[i].TX_BUF_head = 0;
-            Device_List[i].TX_BUF_tail = 0;
-            break;
-        }
-    }
+    Device_List[id].huart = huart;
+    Device_List[id].TX_DMA_busy = 0;
+    Device_List[id].TX_BUF_head = 0;
+    Device_List[id].TX_BUF_tail = 0;
+    Device_List[id].rx_buffer_use = 0;
+    Device_List[id].rx_flag = 0;
+    Device_List[id].data_process = data_process_x;
+    HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
 }
 
-
-void FreeRTOS_UART_DMA_Transmit(UART_HandleTypeDef *huart, uint8_t *data, uint32_t size)
+//裸机DMA发送
+void UART_DMA_Transmit(ID id, uint8_t *data, uint32_t size)
 {
-    if (size == 0 || huart == NULL ||data == NULL)
-    {
-        LED(0,0,200);
-        return;
-    }
-
-    uint8_t Devicex = 100;
-    for (uint8_t i = 0; i < Device_num; i++)
-    {
-        if (Device_List[i].huart == huart)
-        {
-            Devicex = i;
-            break;
-        }
-    }
-
-    if (Devicex == 100)
+    if (size == 0 || data == NULL || Device_List[id].huart == NULL) //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     {
         buzzer(1000,75);
         return;
     }
 
     taskENTER_CRITICAL();
-    uint16_t used = (Device_List[Devicex].TX_BUF_head >= Device_List[Devicex].TX_BUF_tail) ? (Device_List[Devicex].TX_BUF_head - Device_List[Devicex].TX_BUF_tail) : (TX_BUF_SIZE - Device_List[Devicex].TX_BUF_tail + Device_List[Devicex].TX_BUF_head);
+    uint16_t used = (Device_List[id].TX_BUF_head >= Device_List[id].TX_BUF_tail) ? (Device_List[id].TX_BUF_head - Device_List[id].TX_BUF_tail) : (TX_BUF_SIZE - Device_List[id].TX_BUF_tail + Device_List[id].TX_BUF_head);
     uint16_t free_space = TX_BUF_SIZE - used - 1;
 
-    if (free_space < size)
+    if (free_space < size) //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     {
         taskEXIT_CRITICAL();
-        LED(200,0,0);
+        buzzer(1000,75);
         return;
     }
     for (uint16_t i = 0; i < size; i++)
     {
-        Device_List[Devicex].TX_BUF[Device_List[Devicex].TX_BUF_head] = data[i];
-        Device_List[Devicex].TX_BUF_head = (Device_List[Devicex].TX_BUF_head + 1) % TX_BUF_SIZE;
+        Device_List[id].TX_BUF[Device_List[id].TX_BUF_head] = data[i];
+        Device_List[id].TX_BUF_head = (Device_List[id].TX_BUF_head + 1) % TX_BUF_SIZE;
     }
     uint16_t len = 0;
-    if (!Device_List[Devicex].TX_DMA_busy)
+    if (!Device_List[id].TX_DMA_busy)
     {
-        Device_List[Devicex].TX_DMA_busy = 1;
-        while (Device_List[Devicex].TX_BUF_tail != Device_List[Devicex].TX_BUF_head && len < TX_Middle_BUF_SIZE)
+        Device_List[id].TX_DMA_busy = 1;
+        while (Device_List[id].TX_BUF_tail != Device_List[id].TX_BUF_head && len < TX_Middle_BUF_SIZE)
         {
-            Device_List[Devicex].TX_Middle_BUF[len++] = Device_List[Devicex].TX_BUF[Device_List[Devicex].TX_BUF_tail];
-            Device_List[Devicex].TX_BUF_tail = (Device_List[Devicex].TX_BUF_tail + 1) % TX_BUF_SIZE;
+            Device_List[id].TX_Middle_BUF[len++] = Device_List[id].TX_BUF[Device_List[id].TX_BUF_tail];
+            Device_List[id].TX_BUF_tail = (Device_List[id].TX_BUF_tail + 1) % TX_BUF_SIZE;
         }
         taskEXIT_CRITICAL();
-        HAL_UART_Transmit_DMA(huart, Device_List[Devicex].TX_Middle_BUF, len);
+        HAL_UART_Transmit_DMA(Device_List[id].huart, Device_List[id].TX_Middle_BUF, len);
     }
     else taskEXIT_CRITICAL();
 }
 
 
+//裸机DMA缓冲发送回调
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-    uint8_t Devicex = 100;
-    for (uint8_t i = 0; i < Device_num; i++)
+    ID id = Device_num + 1;
+    for (uint8_t i = 1; i < Device_num + 1; i++)
     {
         if (Device_List[i].huart == huart)
         {
-            Devicex = i;
+            id = (ID)i;
             break;
         }
     }
 
-    if (Devicex == 100)
+    if (id == Device_num + 1)         //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     {
         buzzer(1000,75);
         return;
     }
 
     uint16_t len = 0;
-    uint32_t save_status;
+    UBaseType_t save_status;
     save_status = taskENTER_CRITICAL_FROM_ISR();
-
-    while (Device_List[Devicex].TX_BUF_tail != Device_List[Devicex].TX_BUF_head && len < TX_Middle_BUF_SIZE)
+    while (Device_List[id].TX_BUF_tail != Device_List[id].TX_BUF_head && len < TX_Middle_BUF_SIZE)
     {
-        Device_List[Devicex].TX_Middle_BUF[len++] = Device_List[Devicex].TX_BUF[Device_List[Devicex].TX_BUF_tail];
-        Device_List[Devicex].TX_BUF_tail = (Device_List[Devicex].TX_BUF_tail + 1) % TX_BUF_SIZE;
+        Device_List[id].TX_Middle_BUF[len++] = Device_List[id].TX_BUF[Device_List[id].TX_BUF_tail];
+        Device_List[id].TX_BUF_tail = (Device_List[id].TX_BUF_tail + 1) % TX_BUF_SIZE;
     }
     if (len == 0)
     {
-        Device_List[Devicex].TX_DMA_busy = 0;
+        Device_List[id].TX_DMA_busy = 0;
         taskEXIT_CRITICAL_FROM_ISR(save_status);
     }
     else
     {
         taskEXIT_CRITICAL_FROM_ISR(save_status);
-        HAL_UART_Transmit_DMA(huart, Device_List[Devicex].TX_Middle_BUF, len);
+        HAL_UART_Transmit_DMA(huart, Device_List[id].TX_Middle_BUF, len);
     }
 }
 
-
-void FreeRTOS_UART_printf_Transmit(UART_HandleTypeDef* huart, const char* format, ...)
+void UART_printf_Transmit(ID id, const char* format, ...)
 {
-    if (huart == NULL || format == NULL) //错误指示
+    if (Device_List[id].huart == NULL || format == NULL) //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     {
         buzzer(1000,75);
         return;
     }
-    char buffer[128];//这里小一点是因为freertos任务栈是单独的，默认512大小，要是不改的话要小心使用
+    char buffer[128];//这里是裸机的一半，因为任务栈大小默认是512，256太多了
     va_list arg;
     va_start(arg, format);
     int len = vsnprintf(buffer,sizeof(buffer), format, arg);
     va_end(arg);
     if (len > 0)
     {
-        // 如果返回值大于等于 128，说明字符串太长了，实际只写了 127 个字符
+        // 如果返回值大于等于 256，说明字符串太长了，实际只写了 255 个字符
         if (len >= sizeof(buffer))
         {
             len = sizeof(buffer) - 1;
         }
-        FreeRTOS_UART_DMA_Transmit(huart, (uint8_t *)buffer, (uint16_t)len);
+        UART_DMA_Transmit(id, (uint8_t *)buffer, (uint16_t)len);
     }
+}
+
+
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t size)
+{
+    ID id = Device_num + 1;
+    for (uint8_t i = 1; i < Device_num + 1; i++)
+    {
+        if (Device_List[i].huart == huart)
+        {
+            id = (ID)i;
+            break;
+        }
+    }
+
+    if (id == Device_num + 1)         //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    {
+        buzzer(1000,75);
+        return;
+    }
+    if (Device_List[id].rx_flag == 0)
+    {
+        Device_List[id].len = size;
+        Device_List[id].rx_buffer_used = Device_List[id].rx_buffer_use;
+        Device_List[id].rx_buffer_use ^= 1;
+        HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
+        if (Device_List[id].data_process != NULL)
+        {
+            Device_List[id].rx_flag = 1;
+            Device_List[id].data_process(Device_List[id].rx_buffer[Device_List[id].rx_buffer_used], Device_List[id].len);
+        }
+        else buzzer(1000,75);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    }
+    else
+    {
+        LED(200,0,0);//可接受错误指示AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
+    }
+}
+void UART_data_process_over(ID id)
+{
+    Device_List[id].rx_flag = 0;
 }

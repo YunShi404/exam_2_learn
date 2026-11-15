@@ -37,6 +37,7 @@ add_executable(${CMAKE_PROJECT_NAME}
         bsp/buzzer/buzzer.c
         bsp/uart/uart.c
         #bsp/uart/freertos_uart.c
+
 )
 
 # Add STM32CubeMX generated sources

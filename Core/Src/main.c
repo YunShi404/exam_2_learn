@@ -129,7 +129,8 @@ int main(void)
 
   while (1)
   {
-  
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -196,6 +197,7 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 
 /* USER CODE END 4 */
 
