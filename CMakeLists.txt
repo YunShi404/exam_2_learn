@@ -36,6 +36,7 @@ add_executable(${CMAKE_PROJECT_NAME}
         bsp/led/led.c
         bsp/buzzer/buzzer.c
         bsp/uart/uart.c
+        bsp/can/can.c
         #bsp/uart/freertos_uart.c
 
 )
@@ -59,6 +60,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         bsp/led
         bsp/buzzer
         bsp/uart
+        bsp/can
 )
 
 # Add project symbols (macros)
