@@ -35,10 +35,10 @@ enable_language(C ASM)
 add_executable(${CMAKE_PROJECT_NAME}
         bsp/led/led.c
         bsp/buzzer/buzzer.c
-        bsp/uart/uart.c
+        #bsp/uart/uart.c
         bsp/can/can.c
-        #bsp/uart/freertos_uart.c
-
+        bsp/imu/imu.c
+        bsp/uart/freertos_uart.c
 )
 
 # Add STM32CubeMX generated sources
@@ -61,6 +61,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         bsp/buzzer
         bsp/uart
         bsp/can
+        bsp/imu
 )
 
 # Add project symbols (macros)
