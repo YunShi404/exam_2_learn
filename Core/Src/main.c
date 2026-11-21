@@ -34,6 +34,8 @@
 #include<stdio.h>
 #include<string.h>
 #include "buzzer.h"
+#include "motor.h"
+#include "freertos_uart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -67,7 +69,13 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static void uart_rx_callback(uint8_t *data, uint16_t length)
+{
+    (void)data;
+    (void)length;
 
+    UART_data_process_over(UART_1);
+}
 /* USER CODE END 0 */
 
 /**
@@ -115,7 +123,10 @@ int main(void)
   MX_FDCAN1_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
+  LED_Init();
+  Motor_Init(FDCAN_1, &hfdcan1, GM6020);
 
+  UART_init(UART_1, &huart1, uart_rx_callback);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -132,7 +143,6 @@ int main(void)
 
   while (1)
   {
-
 
     /* USER CODE END WHILE */
 

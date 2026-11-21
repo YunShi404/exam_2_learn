@@ -15,7 +15,7 @@
 static Device Device_List[Device_num + 1];//这里加1是为了让数组能从一开始，0那个就不要了，为了能和串口id对上（串口从1开始而数组从0开始）
 
 //初始化函数：注册串口
-void UART_init(ID id, UART_HandleTypeDef *huart, p_data_process data_process_x)
+void UART_init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_process_x)
 {
     Device_List[id].huart = huart;
     Device_List[id].TX_DMA_busy = 0;
@@ -28,7 +28,7 @@ void UART_init(ID id, UART_HandleTypeDef *huart, p_data_process data_process_x)
 }
 
 //裸机DMA发送
-void UART_DMA_Transmit(ID id, uint8_t *data, uint32_t size)
+void UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size)
 {
     if (size == 0 || data == NULL || Device_List[id].huart == NULL) //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     {
@@ -70,12 +70,12 @@ void UART_DMA_Transmit(ID id, uint8_t *data, uint32_t size)
 //裸机DMA缓冲发送回调
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-    ID id = Device_num + 1;
+    UART_ID id = Device_num + 1;
     for (uint8_t i = 1; i < Device_num + 1; i++)
     {
         if (Device_List[i].huart == huart)
         {
-            id = (ID)i;
+            id = (UART_ID)i;
             break;
         }
     }
@@ -106,7 +106,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
-void UART_printf_Transmit(ID id, const char* format, ...)
+void UART_printf_Transmit(UART_ID id, const char* format, ...)
 {
     if (Device_List[id].huart == NULL || format == NULL) //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     {
@@ -133,12 +133,12 @@ void UART_printf_Transmit(ID id, const char* format, ...)
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t size)
 {
-    ID id = Device_num + 1;
+    UART_ID id = Device_num + 1;
     for (uint8_t i = 1; i < Device_num + 1; i++)
     {
         if (Device_List[i].huart == huart)
         {
-            id = (ID)i;
+            id = (UART_ID)i;
             break;
         }
     }
@@ -167,7 +167,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t size)
         HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
     }
 }
-void UART_data_process_over(ID id)
+void UART_data_process_over(UART_ID id)
 {
     Device_List[id].rx_flag = 0;
 }

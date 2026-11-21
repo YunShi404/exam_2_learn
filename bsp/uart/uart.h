@@ -42,12 +42,12 @@ typedef enum
     UART_8,
     UART_9,
     UART_10,
-}ID;
+}UART_ID;
 
 
 
-void UART_init(ID id, UART_HandleTypeDef *huart, p_data_process data_process_x);
-void UART_DMA_Transmit(ID id, uint8_t *data, uint32_t size);
-void UART_printf_Transmit(ID id, const char* format, ...);
-void UART_data_process_over(ID id);
+void UART_init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_process_x);
+void UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size);
+void UART_printf_Transmit(UART_ID id, const char* format, ...);
+void UART_data_process_over(UART_ID id);
 #endif //EXAM_2_LEARN_UART_H

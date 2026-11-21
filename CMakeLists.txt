@@ -39,6 +39,7 @@ add_executable(${CMAKE_PROJECT_NAME}
         bsp/can/can.c
         bsp/imu/imu.c
         bsp/uart/freertos_uart.c
+        component/motor/motor.c
 )
 
 # Add STM32CubeMX generated sources
@@ -62,6 +63,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         bsp/uart
         bsp/can
         bsp/imu
+        component/motor
 )
 
 # Add project symbols (macros)
@@ -78,3 +80,4 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
     # Add user defined libraries
 )
+target_link_options(${PROJECT_NAME} PRIVATE -u _printf_float)

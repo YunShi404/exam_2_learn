@@ -7,7 +7,7 @@
 #include "led.h"
 #include"buzzer.h"
 CAN can[CAN_NUM + 1];
-void CAN_Init_A(ID can_id, FDCAN_HandleTypeDef *hfdcan, uint16_t filter_goal_id, uint16_t filter_mask, p_can_process can_process_x)
+void CAN_Init_A(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, uint16_t filter_goal_id, uint16_t filter_mask, p_can_process can_process_x)
 {
     can[can_id].can_process = can_process_x;
     can[can_id].hfdcan = hfdcan;
@@ -26,9 +26,9 @@ void CAN_Init_A(ID can_id, FDCAN_HandleTypeDef *hfdcan, uint16_t filter_goal_id,
     HAL_FDCAN_Start(hfdcan);
     //覆盖模式，掩码模式，只用FIFO0，标准模式
 }
-void CAN_Transmit_classic(uint32_t data_id, const uint8_t *data, uint8_t length, ID can_id)
+void CAN_Transmit_classic(uint32_t data_id, const uint8_t *data, uint8_t length, CAN_ID can_id)//这里填长度只是因为AI说方便未来支持其他协议
 {
-    if (data_id > 0x7FF || length > 8 || data == NULL || HAL_FDCAN_GetTxFifoFreeLevel(can[can_id].hfdcan) == 0)
+     if (data_id > 0x7FF || length > 8 || data == NULL /*|| HAL_FDCAN_GetTxFifoFreeLevel(can[can_id].hfdcan) == 0*/)
     {
         LED(200,0,0);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return ;
@@ -53,12 +53,12 @@ void CAN_Transmit_classic(uint32_t data_id, const uint8_t *data, uint8_t length,
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
-    ID can_id = CAN_NUM + 1;
+    CAN_ID can_id = CAN_NUM + 1;
     for (uint8_t i = 1; i < CAN_NUM + 1; i++)
     {
         if (can[i].hfdcan == hfdcan)
         {
-            can_id = (ID)i;
+            can_id = (CAN_ID)i;
             break;
         }
     }

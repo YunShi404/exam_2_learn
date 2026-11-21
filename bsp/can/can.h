@@ -15,7 +15,7 @@ typedef enum
     FDCAN_1 = 1,
     FDCAN_2 = 2,
     FDCAN_3 = 3,
-}ID;
+}CAN_ID;
 
 typedef struct
 {
@@ -24,8 +24,8 @@ typedef struct
 }CAN;
 
 
-void CAN_Init_A(ID can_id, FDCAN_HandleTypeDef *hfdcan, uint16_t filter_goal_id, uint16_t filter_mask, p_can_process can_process_x);
-void CAN_Transmit_classic(uint32_t data_id, const uint8_t *data, uint8_t length, ID can_id);
+void CAN_Init_A(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, uint16_t filter_goal_id, uint16_t filter_mask, p_can_process can_process_x);
+void CAN_Transmit_classic(uint32_t data_id, const uint8_t *data, uint8_t length, CAN_ID can_id);
 
 
 #endif //EXAM_2_LEARN_CAN_H
