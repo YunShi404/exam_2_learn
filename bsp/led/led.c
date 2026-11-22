@@ -50,5 +50,5 @@ void LED(uint8_t R,uint8_t G,uint8_t B)
 
 void LED_Init(void)
 {
-    LED(0,0,0);
+    LED(200,200,200);
 }

@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "motor.h"
 #include "freertos_uart.h"
+#include "remote.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -130,7 +131,9 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    motor_control(GM6020_I_control_1234, 1500, 0, 0, 0);
+    remote_data_type remote_data_a;
+    Get_Remote_data(&remote_data_a);
+    motor_control(GM6020_I_control_1234, 3*remote_data_a.ch0, 0, 0, 0);
     osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
@@ -149,9 +152,9 @@ void StartTask02(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    GM6020_motor_status a;
-    GM6020_Get_Status(1, &a);
-    UART_printf_Transmit(1, "%d, %d\n", a.speed_rpm, a.angle);
+    remote_data_type remote_data_b;
+    Get_Remote_data(&remote_data_b);
+    UART_printf_Transmit(1, "%d, %d, %d, %d, %d, %d\n", remote_data_b.ch0, remote_data_b.ch1, remote_data_b.ch2, remote_data_b.ch3,remote_data_b.sw1, remote_data_b.sw2);
     osDelay(50);
   }
   /* USER CODE END StartTask02 */

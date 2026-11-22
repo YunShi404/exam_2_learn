@@ -40,6 +40,8 @@ add_executable(${CMAKE_PROJECT_NAME}
         bsp/imu/imu.c
         bsp/uart/freertos_uart.c
         component/motor/motor.c
+        component/remote/remote.c
+        component/PID/pid.c
 )
 
 # Add STM32CubeMX generated sources
@@ -64,6 +66,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         bsp/can
         bsp/imu
         component/motor
+        component/remote
+        component/PID
 )
 
 # Add project symbols (macros)

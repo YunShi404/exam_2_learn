@@ -15,7 +15,7 @@
 static Device Device_List[Device_num + 1];//这里加1是为了让数组能从一开始，0那个就不要了，为了能和串口id对上（串口从1开始而数组从0开始）
 
 //初始化函数：注册串口
-void UART_init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_process_x)
+void UART_Init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_process_x)
 {
     Device_List[id].huart = huart;
     Device_List[id].TX_DMA_busy = 0;
@@ -24,6 +24,19 @@ void UART_init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_proces
     Device_List[id].rx_buffer_use = 0;
     Device_List[id].rx_flag = 0;
     Device_List[id].data_process = data_process_x;
+
+    // 清除启动前已经挂起的串口错误
+    __HAL_UART_CLEAR_FLAG(
+        huart,
+        UART_CLEAR_PEF |
+        UART_CLEAR_FEF |
+        UART_CLEAR_NEF |
+        UART_CLEAR_OREF
+    );
+
+    // 清掉 HAL 保存的软件错误状态
+    huart->ErrorCode = HAL_UART_ERROR_NONE;
+
     HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
 }
 
@@ -167,6 +180,53 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t size)
         HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
     }
 }
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    UART_ID id = Device_num + 1;
+
+    for (uint8_t i = 1; i < Device_num + 1; i++)
+    {
+        if (Device_List[i].huart == huart)
+        {
+            id = (UART_ID)i;
+            break;
+        }
+    }
+
+    if (id == Device_num + 1)
+    {
+        return;
+    }
+
+    /*
+     * PE/FE/NE 可能只是非阻塞错误，此时 DMA 仍在接收；
+     * 只有 HAL 已将接收状态恢复为 READY 时才重新启动。
+     */
+    if (huart->RxState != HAL_UART_STATE_READY)
+    {
+        return;
+    }
+
+    Device_List[id].rx_flag = 0;
+
+    __HAL_UART_CLEAR_FLAG(
+        huart,
+        UART_CLEAR_PEF |
+        UART_CLEAR_FEF |
+        UART_CLEAR_NEF |
+        UART_CLEAR_OREF
+    );
+
+    huart->ErrorCode = HAL_UART_ERROR_NONE;
+
+    HAL_UARTEx_ReceiveToIdle_DMA(
+        huart,
+        Device_List[id].rx_buffer[Device_List[id].rx_buffer_use],
+        rx_buffer_size
+    );
+}
+
 void UART_data_process_over(UART_ID id)
 {
     Device_List[id].rx_flag = 0;

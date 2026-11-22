@@ -36,6 +36,7 @@
 #include "buzzer.h"
 #include "motor.h"
 #include "freertos_uart.h"
+#include "remote.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -71,7 +72,7 @@ void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN 0 */
 static void uart_rx_callback(uint8_t *data, uint16_t length)
 {
-    (void)data;
+    (void)data;//AI不知道什么时候偷偷写的，不知道什么作用
     (void)length;
 
     UART_data_process_over(UART_1);
@@ -122,11 +123,12 @@ int main(void)
   MX_USART1_UART_Init();
   MX_FDCAN1_Init();
   MX_SPI2_Init();
+  MX_UART5_Init();
   /* USER CODE BEGIN 2 */
   LED_Init();
   Motor_Init(FDCAN_1, &hfdcan1, GM6020);
-
-  UART_init(UART_1, &huart1, uart_rx_callback);
+  UART_Init(UART_5, &huart5, Remote_rx);
+  UART_Init(UART_1, &huart1, uart_rx_callback);
   /* USER CODE END 2 */
 
   /* Init scheduler */

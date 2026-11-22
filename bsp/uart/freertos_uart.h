@@ -46,7 +46,7 @@ typedef enum
 
 
 
-void UART_init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_process_x);
+void UART_Init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_process_x);
 void UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size);
 void UART_printf_Transmit(UART_ID id, const char* format, ...);
 void UART_data_process_over(UART_ID id);
