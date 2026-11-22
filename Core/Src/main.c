@@ -36,7 +36,9 @@
 #include "buzzer.h"
 #include "motor.h"
 #include "freertos_uart.h"
+#include "imu.h"
 #include "remote.h"
+#include "attitude.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -129,6 +131,7 @@ int main(void)
   Motor_Init(FDCAN_1, &hfdcan1, GM6020);
   UART_Init(UART_5, &huart5, Remote_rx);
   UART_Init(UART_1, &huart1, uart_rx_callback);
+  BMI088_init();
   /* USER CODE END 2 */
 
   /* Init scheduler */

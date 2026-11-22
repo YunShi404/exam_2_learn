@@ -4,16 +4,19 @@
 
 #ifndef EXAM_2_LEARN_IMU_H
 #define EXAM_2_LEARN_IMU_H
-#include "stdint.h"
 
+#include <stdbool.h>
+#include <stdint.h>
 
-extern int16_t ACC_origin_data[3];
-extern int16_t GYRO_origin_data[3];
-extern float ACC_data_g[3];
-extern float GYRO_data_dps[3];
+typedef struct
+{
+    float accel_g[3];
+    float gyro_dps[3];
+} BMI088_Data_t;
 
 void BMI088_Transmit(uint8_t device, uint8_t address, uint8_t choice);
-void BMI088_Read(uint8_t device, uint8_t address);
-void BMI088_update(void);
+bool BMI088_Read(uint8_t device, uint8_t address);
+bool BMI088_update(BMI088_Data_t *output);
 void BMI088_init(void);
+
 #endif //EXAM_2_LEARN_IMU_H

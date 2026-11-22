@@ -42,6 +42,7 @@ add_executable(${CMAKE_PROJECT_NAME}
         component/motor/motor.c
         component/remote/remote.c
         component/PID/pid.c
+        component/attitude/attitude.c
 )
 
 # Add STM32CubeMX generated sources
@@ -68,6 +69,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         component/motor
         component/remote
         component/PID
+        component/attitude
 )
 
 # Add project symbols (macros)
@@ -81,6 +83,7 @@ list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
+    m
 
     # Add user defined libraries
 )

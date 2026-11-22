@@ -26,8 +26,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "attitude.h"
 #include "motor.h"
 #include "freertos_uart.h"
+#include "imu.h"
 #include "remote.h"
 /* USER CODE END Includes */
 
@@ -131,9 +133,9 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    remote_data_type remote_data_a;
-    Get_Remote_data(&remote_data_a);
-    motor_control(GM6020_I_control_1234, 3*remote_data_a.ch0, 0, 0, 0);
+    // remote_data_type remote_data_a;
+    // Get_Remote_data(&remote_data_a);
+    // motor_control(GM6020_I_control_1234, 3 * remote_data_a.ch0, 0, 0, 0);
     osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
@@ -149,13 +151,23 @@ void StartDefaultTask(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
+  Attitude attitude;
+  Attitude_Init(&attitude);
   /* Infinite loop */
   for(;;)
   {
-    remote_data_type remote_data_b;
-    Get_Remote_data(&remote_data_b);
-    UART_printf_Transmit(1, "%d, %d, %d, %d, %d, %d\n", remote_data_b.ch0, remote_data_b.ch1, remote_data_b.ch2, remote_data_b.ch3,remote_data_b.sw1, remote_data_b.sw2);
-    osDelay(50);
+    BMI088_Data_t data;
+    if (BMI088_update(&data))
+    {
+      Attitude_Update(
+          &attitude,
+          data.gyro_dps,
+          data.accel_g,
+          0.01f
+      );
+    }
+    UART_printf_Transmit(1, "%f, %f, %f\n", attitude.roll, attitude.pitch, attitude.yaw);
+    osDelay(10);
   }
   /* USER CODE END StartTask02 */
 }
