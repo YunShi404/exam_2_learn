@@ -35,7 +35,6 @@ enable_language(C ASM)
 add_executable(${CMAKE_PROJECT_NAME}
         bsp/led/led.c
         bsp/buzzer/buzzer.c
-        #bsp/uart/uart.c
         bsp/can/can.c
         bsp/imu/imu.c
         bsp/uart/freertos_uart.c

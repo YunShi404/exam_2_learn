@@ -10,10 +10,10 @@
 #include "led.h"
 #include "buzzer.h"
 #include <stdarg.h>
-
 #include "task.h"
 static Device Device_List[Device_num + 1];//这里加1是为了让数组能从一开始，0那个就不要了，为了能和串口id对上（串口从1开始而数组从0开始）
-
+volatile uint16_t rx_lost = 0;
+volatile uint16_t tx_lost = 0;
 //初始化函数：注册串口
 void UART_Init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_process_x)
 {
@@ -22,7 +22,7 @@ void UART_Init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_proces
     Device_List[id].TX_BUF_head = 0;
     Device_List[id].TX_BUF_tail = 0;
     Device_List[id].rx_buffer_use = 0;
-    Device_List[id].rx_flag = 0;
+    Device_List[id].process_flag = 0;
     Device_List[id].data_process = data_process_x;
 
     // 清除启动前已经挂起的串口错误
@@ -40,13 +40,13 @@ void UART_Init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_proces
     HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
 }
 
-//裸机DMA发送
-void UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size)
+
+int UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size)
 {
-    if (size == 0 || data == NULL || Device_List[id].huart == NULL) //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    if (size == 0 || data == NULL || Device_List[id].huart == NULL || id < 1 || id > 10) //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     {
         buzzer(1000,75);
-        return;
+        return 0;
     }
 
     taskENTER_CRITICAL();
@@ -57,7 +57,7 @@ void UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size)
     {
         taskEXIT_CRITICAL();
         buzzer(1000,75);
-        return;
+        return 0;
     }
     for (uint16_t i = 0; i < size; i++)
     {
@@ -74,13 +74,32 @@ void UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size)
             Device_List[id].TX_BUF_tail = (Device_List[id].TX_BUF_tail + 1) % TX_BUF_SIZE;
         }
         taskEXIT_CRITICAL();
-        HAL_UART_Transmit_DMA(Device_List[id].huart, Device_List[id].TX_Middle_BUF, len);
+        if (HAL_UART_Transmit_DMA(Device_List[id].huart, Device_List[id].TX_Middle_BUF, len) != HAL_OK )
+        {
+            tx_lost++;
+            // if (Device_List[id].TX_BUF_tail >= len)//尾指针回退
+            // {
+            //     Device_List[id].TX_BUF_tail -= len;
+            // }
+            // else
+            // {
+            //     Device_List[id].TX_BUF_tail =
+            //         TX_BUF_SIZE - (len - Device_List[id].TX_BUF_tail);
+            // }
+            Device_List[id].TX_DMA_busy = 0;
+            return 0;
+        }
+        else return 1;
+
     }
-    else taskEXIT_CRITICAL();
+    else
+    {
+        taskEXIT_CRITICAL();
+        return 0;
+    }
 }
 
 
-//裸机DMA缓冲发送回调
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     UART_ID id = Device_num + 1;
@@ -115,7 +134,21 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     else
     {
         taskEXIT_CRITICAL_FROM_ISR(save_status);
-        HAL_UART_Transmit_DMA(huart, Device_List[id].TX_Middle_BUF, len);
+        if (HAL_UART_Transmit_DMA(Device_List[id].huart, Device_List[id].TX_Middle_BUF, len) != HAL_OK )
+        {
+            // if (Device_List[id].TX_BUF_tail >= len)//尾指针回退
+            // {
+            //     Device_List[id].TX_BUF_tail -= len;
+            // }
+            // else
+            // {
+            //     Device_List[id].TX_BUF_tail =
+            //         TX_BUF_SIZE - (len - Device_List[id].TX_BUF_tail);
+            // }
+            Device_List[id].TX_DMA_busy = 0;
+            buzzer(1000,75);
+            tx_lost += 1;
+        }
     }
 }
 
@@ -161,7 +194,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t size)
         buzzer(1000,75);
         return;
     }
-    if (Device_List[id].rx_flag == 0)
+    if (Device_List[id].process_flag == 0)
     {
         Device_List[id].len = size;
         Device_List[id].rx_buffer_used = Device_List[id].rx_buffer_use;
@@ -169,13 +202,13 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t size)
         HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
         if (Device_List[id].data_process != NULL)
         {
-            Device_List[id].rx_flag = 1;
+            Device_List[id].process_flag = 1;
             Device_List[id].data_process(Device_List[id].rx_buffer[Device_List[id].rx_buffer_used], Device_List[id].len);
         }
-        else buzzer(1000,75);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     }
     else
     {
+        rx_lost += 1;
         LED(200,0,0);//可接受错误指示AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
         HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
     }
@@ -199,23 +232,38 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
         return;
     }
 
+    uint32_t uart_error = huart->ErrorCode;
+
     /*
-     * PE/FE/NE 可能只是非阻塞错误，此时 DMA 仍在接收；
+     * 任意 DMA 错误都可能已经中止发送 DMA，因此必须先恢复发送端状态。
+     * 若接收 DMA 仍在工作，也不能让后面的提前返回跳过这一步。
+     */
+    if ((uart_error & HAL_UART_ERROR_DMA) != 0U)
+    {
+        UBaseType_t save_status;
+        save_status = taskENTER_CRITICAL_FROM_ISR();
+        Device_List[id].TX_DMA_busy = 0;
+        taskEXIT_CRITICAL_FROM_ISR(save_status);
+    }
+
+    /*
+     * 非阻塞接收错误时 DMA 仍在工作，不能重复启动；
      * 只有 HAL 已将接收状态恢复为 READY 时才重新启动。
      */
     if (huart->RxState != HAL_UART_STATE_READY)
     {
+        huart->ErrorCode = HAL_UART_ERROR_NONE;
         return;
     }
 
-    Device_List[id].rx_flag = 0;
 
     __HAL_UART_CLEAR_FLAG(
         huart,
         UART_CLEAR_PEF |
         UART_CLEAR_FEF |
         UART_CLEAR_NEF |
-        UART_CLEAR_OREF
+        UART_CLEAR_OREF |
+        UART_CLEAR_RTOF
     );
 
     huart->ErrorCode = HAL_UART_ERROR_NONE;
@@ -229,5 +277,5 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 
 void UART_data_process_over(UART_ID id)
 {
-    Device_List[id].rx_flag = 0;
+    Device_List[id].process_flag = 0;
 }

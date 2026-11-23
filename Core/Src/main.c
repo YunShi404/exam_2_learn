@@ -129,8 +129,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   LED_Init();
   Motor_Init(FDCAN_1, &hfdcan1, GM6020);
-  UART_Init(UART_5, &huart5, Remote_rx);
-  UART_Init(UART_1, &huart1, uart_rx_callback);
+  UART_Init(UART_5, &huart5, Remote_rx);//遥控器
+  UART_Init(UART_1, &huart1, uart_rx_callback);//vofa
   BMI088_init();
   /* USER CODE END 2 */
 
