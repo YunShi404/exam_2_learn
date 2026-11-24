@@ -21,11 +21,16 @@ typedef struct
 {
     FDCAN_HandleTypeDef *hfdcan;
     p_can_process can_process;
+
+    volatile uint8_t online ;
+    volatile uint16_t can_tx_lost ;
+    volatile uint16_t can_rx_lost ;
 }CAN;
 
 
-void CAN_Init_A(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, uint16_t filter_goal_id, uint16_t filter_mask, p_can_process can_process_x);
-void CAN_Transmit_classic(uint32_t data_id, const uint8_t *data, uint8_t length, CAN_ID can_id);
+
+int CAN_Init_A(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, uint16_t filter_goal_id, uint16_t filter_mask, p_can_process can_process_x);
+int CAN_Transmit_classic(uint32_t data_id, const uint8_t *data, uint8_t length, CAN_ID can_id);
 
 
 #endif //EXAM_2_LEARN_CAN_H

@@ -29,6 +29,9 @@ typedef struct
     p_data_process data_process;
     volatile uint8_t process_flag ;
     volatile uint8_t rx_buffer_used ;
+
+    volatile uint16_t uart_rx_lost ;
+    volatile uint16_t uart_tx_lost ;
 } Device;
 
 typedef enum
@@ -45,12 +48,12 @@ typedef enum
     UART_10,
 }UART_ID;
 
-extern volatile uint16_t rx_lost;
-extern volatile uint16_t tx_lost;
+
+
 
 void UART_Init(UART_ID id, UART_HandleTypeDef *huart, p_data_process data_process_x);
 int UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size);
-void UART_printf_Transmit(UART_ID id, const char* format, ...);
+int UART_printf_Transmit(UART_ID id, const char* format, ...);
 void UART_data_process_over(UART_ID id);
 
 #endif //EXAM_2_LEARN_FREERTOS_UART_H
