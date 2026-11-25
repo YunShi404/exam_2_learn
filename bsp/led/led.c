@@ -44,7 +44,7 @@ void LED(uint8_t R,uint8_t G,uint8_t B)
     HAL_SPI_Transmit_DMA(&hspi6, (uint8_t *)led_transmit, 24);
 
     // 5. 延时等待 WS2812 锁存（RESET信号）
-    HAL_Delay(100);
+    HAL_Delay(1);
 }
 
 

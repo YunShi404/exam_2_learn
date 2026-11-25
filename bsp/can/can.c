@@ -23,23 +23,23 @@ int CAN_Init_A(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, uint16_t filter_goal_
     filter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
     filter.FilterID1    = filter_goal_id;
     filter.FilterID2    = filter_mask;
-    while (HAL_FDCAN_ConfigFilter(hfdcan, &filter) != HAL_OK)
+    if (HAL_FDCAN_ConfigFilter(hfdcan, &filter) != HAL_OK)
     {
         return -1;
     }
-    while (HAL_FDCAN_ConfigGlobalFilter(hfdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE) != HAL_OK)
+    if (HAL_FDCAN_ConfigGlobalFilter(hfdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE) != HAL_OK)
     {
         return -2;
     }
-    while (HAL_FDCAN_ConfigRxFifoOverwrite(hfdcan, FDCAN_RX_FIFO0, FDCAN_RX_FIFO_OVERWRITE) != HAL_OK)
+    if (HAL_FDCAN_ConfigRxFifoOverwrite(hfdcan, FDCAN_RX_FIFO0, FDCAN_RX_FIFO_OVERWRITE) != HAL_OK)
     {
         return -3;
     }
-    while (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE|FDCAN_IT_RX_FIFO0_MESSAGE_LOST|FDCAN_IT_BUS_OFF, 0) != HAL_OK)
+    if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE|FDCAN_IT_RX_FIFO0_MESSAGE_LOST|FDCAN_IT_BUS_OFF, 0) != HAL_OK)
     {
         return -4;
     }
-    while (HAL_FDCAN_Start(hfdcan) != HAL_OK)
+    if (HAL_FDCAN_Start(hfdcan) != HAL_OK)
     {
         return -5;
     }

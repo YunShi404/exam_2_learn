@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+#define BUFFER_SIZE 72
+
 typedef struct
 {
     int16_t ch0;
@@ -26,5 +28,5 @@ typedef struct
 
 
 void Remote_rx(uint8_t *data, uint16_t length);
-void Get_Remote_data(remote_data_type *get_struct);
+int Get_Remote_data(remote_data_type *get_struct);
 #endif //EXAM_2_LEARN_REMOTE_H
