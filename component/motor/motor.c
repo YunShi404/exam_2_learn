@@ -8,11 +8,11 @@
 #include"task.h"
 
 
-static CAN_ID motor_can_id;
+
 
 static GM6020_motor_status motor_status_GM6020[GM6020_MOTOR_NUM + 1];
 
-motor GM6020 = {0x200,0x7F0};
+motor_set GM6020 = {0x200, 0x7F0};
 
 GM6020_motor_status error = {1,2,3,4};
 
@@ -24,6 +24,7 @@ void can_recieve_motor(uint16_t id, const uint8_t *data, uint8_t length)
         motor_status_GM6020[id - 0x204].speed_rpm = data[2] << 8 | data[3];
         motor_status_GM6020[id - 0x204].current_raw = data[4] << 8 | data[5];
         motor_status_GM6020[id - 0x204].temperature = data[6];
+        motor_status_GM6020[id - 0x204].tick = HAL_GetTick();
     }
 
 
@@ -61,35 +62,44 @@ int GM6020_Get_Status(uint8_t motor_id, GM6020_motor_status *output)
 {
     if (motor_id < 1 || motor_id > GM6020_MOTOR_NUM || output == NULL)
     {
-        *output = error;
-        LED(0,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        LED(200,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -1;
     }
     else
     {
-        taskENTER_CRITICAL();
-        *output = motor_status_GM6020[motor_id];
-        taskEXIT_CRITICAL();
-        return 1;
+        if (HAL_GetTick() - motor_status_GM6020[motor_id].tick <= 100)
+        {
+            motor_status_GM6020[motor_id].online = 1;
+            taskENTER_CRITICAL();
+            *output = motor_status_GM6020[motor_id];
+            taskEXIT_CRITICAL();
+            return 1;
+        }
+        else
+        {
+            *output = error;
+            motor_status_GM6020[motor_id].online = 0;
+            LED(200,0,200);
+            return -2;
+        }
     }
 }
 
 
 
-int Motor_Init(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, motor motor)
+int Motor_Init(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, motor_set motor_set)
 {
-    motor_can_id = can_id;
-    int sign = CAN_Init_A(can_id, hfdcan, motor.filter_goal_id, motor.filter_mask, can_recieve_motor);
+    int sign = CAN_Init_A(can_id, hfdcan, motor_set.filter_goal_id, motor_set.filter_mask, can_recieve_motor);
     if (sign != 1)
     {
-        LED(0,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        LED(200,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     }
     return sign;
 }
 
 
 
-int motor_control(data_id data_id, int16_t data1, int16_t data2, int16_t data3, int16_t data4)
+int motor_control(CAN_ID can_id, data_id data_id, int16_t data1, int16_t data2, int16_t data3, int16_t data4)
 {
     if (data_id == GM6020_V_control_1234 || data_id == GM6020_V_control_567)
     {
@@ -104,17 +114,17 @@ int motor_control(data_id data_id, int16_t data1, int16_t data2, int16_t data3, 
             control_data[5] = data3;
             control_data[6] = data4 >> 8;
             control_data[7] = data4;
-            int sign = CAN_Transmit_classic(data_id, control_data, 8, motor_can_id);
+            int sign = CAN_Transmit_classic(data_id, control_data, 8, can_id);
             if (sign != 1)
             {
-                LED(0,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                LED(200,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                 return sign - 10;
             }
             return 1;
         }
         else
         {
-            LED(0,0,220);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            LED(200,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
             return -1;
         }
     }
@@ -132,17 +142,19 @@ int motor_control(data_id data_id, int16_t data1, int16_t data2, int16_t data3, 
             control_data[5] = data3;
             control_data[6] = data4 >> 8;
             control_data[7] = data4;
-            int sign = CAN_Transmit_classic(data_id, control_data, 8, motor_can_id);
+            int sign = CAN_Transmit_classic(data_id, control_data, 8, can_id);
             if (sign != 1)
             {
-                LED(0,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                LED(200,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                 return sign - 20;
             }
+            return 1;
         }
         else
         {
-            LED(0,0,220);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            LED(200,0,200);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
             return -2;
         }
     }
+    return -3;
 }

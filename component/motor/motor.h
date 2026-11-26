@@ -18,15 +18,18 @@ typedef struct
     int16_t speed_rpm;
     int16_t current_raw;
     uint8_t temperature;
+    uint32_t tick;
+    uint8_t online;
 }GM6020_motor_status;
 
 typedef struct
 {
     uint16_t filter_goal_id;
     uint16_t filter_mask;
-}motor;
 
-extern motor GM6020;
+}motor_set;
+
+extern motor_set GM6020;
 
 typedef enum
 {
@@ -37,8 +40,8 @@ typedef enum
 }data_id;
 
 int GM6020_Get_Status(uint8_t motor_id, GM6020_motor_status *output);
-int Motor_Init(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, motor motor);
-int motor_control(data_id data_id, int16_t data1, int16_t data2, int16_t data3, int16_t data4);
+int Motor_Init(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, motor_set motor_set);
+int motor_control(CAN_ID can_id, data_id data_id, int16_t data1, int16_t data2, int16_t data3, int16_t data4);
 
 
 #endif //EXAM_2_LEARN_MOTOR_H

@@ -12,17 +12,14 @@ int PID_Init(PID_member *pid,
              float d,
              float dt,
              double integral_limit,
-             double output_limit,
-             double goal,
-             double real)
+             double output_limit)
 {
     if (pid == NULL || dt <= 0)
     {
         return -1;
     }
 
-    pid->goal = goal;
-    pid->real = real;
+
 
     pid->p = p;
     pid->i = i;
@@ -31,7 +28,7 @@ int PID_Init(PID_member *pid,
     pid->dt = dt;
 
     pid->integral = 0.0;
-    pid->last_error = goal - real;
+    pid->last_error = 0;
     pid->error = 0.0;
     pid->vary_speed = 0.0f;
     pid->last_vary_speed = 0;
@@ -49,7 +46,7 @@ int PID_Reset(PID_member *pid)
     }
 
     pid->integral = 0.0;
-    pid->last_error = pid->goal - pid->real;
+    pid->last_error = 0;
     pid->error = 0.0;
     pid->vary_speed = 0.0f;
     pid->last_vary_speed = 0;
@@ -57,7 +54,7 @@ int PID_Reset(PID_member *pid)
 }
 
 
-double PID(PID_member *pid)
+double PID(PID_member *pid, double goal, double real)
 {
     if (pid == NULL || pid->dt <= 0)
     {
@@ -67,7 +64,7 @@ double PID(PID_member *pid)
 
 
 
-    pid->error = pid->goal - pid->real;
+    pid->error = goal - real;
 
     pid->integral =pid->integral + pid->error * pid->dt;
 

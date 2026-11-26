@@ -27,7 +27,7 @@ void Remote_rx(uint8_t *data, uint16_t length)
     if (data == NULL || length > 36 || length == 0)
     {
         UART_data_process_over(UART_5);
-        LED(0,200,0);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        LED(200,200,0);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return;
     }
 
@@ -76,7 +76,7 @@ void Remote_rx(uint8_t *data, uint16_t length)
         check_point++;
         if (check_point > BUFFER_SIZE - 1) check_point = 0;
     }
-    LED(0,200,0);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    LED(200,200,0);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     UART_data_process_over(UART_5);
 }
 
@@ -84,7 +84,7 @@ int Get_Remote_data(remote_data_type *get_struct)
 {
     if (get_struct == NULL)
     {
-        LED(0,200,0);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+        LED(200,200,0);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -1;
     }
 
@@ -96,6 +96,7 @@ int Get_Remote_data(remote_data_type *get_struct)
     if (get_struct->online == 0)
     {
         *get_struct = error;
+        LED(200,200,0);//aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -2;
     }
     return 1;

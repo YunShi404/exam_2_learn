@@ -3,9 +3,8 @@
 //
 
 #include "can.h"
-#include "fdcan.h"
-#include "led.h"
-#include"buzzer.h"
+
+
 
 
 CAN can[CAN_NUM + 1];
@@ -25,22 +24,27 @@ int CAN_Init_A(CAN_ID can_id, FDCAN_HandleTypeDef *hfdcan, uint16_t filter_goal_
     filter.FilterID2    = filter_mask;
     if (HAL_FDCAN_ConfigFilter(hfdcan, &filter) != HAL_OK)
     {
+        LED(0,200,200);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -1;
     }
     if (HAL_FDCAN_ConfigGlobalFilter(hfdcan, FDCAN_REJECT, FDCAN_REJECT, FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE) != HAL_OK)
     {
+        LED(0,200,200);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -2;
     }
     if (HAL_FDCAN_ConfigRxFifoOverwrite(hfdcan, FDCAN_RX_FIFO0, FDCAN_RX_FIFO_OVERWRITE) != HAL_OK)
     {
+        LED(0,200,200);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -3;
     }
     if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE|FDCAN_IT_RX_FIFO0_MESSAGE_LOST|FDCAN_IT_BUS_OFF, 0) != HAL_OK)
     {
+        LED(0,200,200);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -4;
     }
     if (HAL_FDCAN_Start(hfdcan) != HAL_OK)
     {
+       LED(0,200,200);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -5;
     }
     //覆盖模式，掩码模式，只用FIFO0，标准模式
@@ -51,7 +55,7 @@ int CAN_Transmit_classic(uint32_t data_id, const uint8_t *data, uint8_t length, 
 {
      if (data_id > 0x7FF || length > 8 || data == NULL || can_id < 1 || can_id > 3/*|| HAL_FDCAN_GetTxFifoFreeLevel(can[can_id].hfdcan) == 0*/)
     {
-        LED(200,0,0);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+         LED(0,200,200);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -1;
     }
 
@@ -71,6 +75,7 @@ int CAN_Transmit_classic(uint32_t data_id, const uint8_t *data, uint8_t length, 
     if (HAL_FDCAN_AddMessageToTxFifoQ(can[can_id].hfdcan, &tx_header, data) != HAL_OK)
     {
         can[can_id].can_tx_lost++;
+        LED(0,200,200);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return -2;
     }
     else return 1;
@@ -91,7 +96,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
     }
     if (can_id == CAN_NUM + 1)   //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     {
-        buzzer(600,75);
+        LED(0,200,200);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return;
     }
     if (RxFifo0ITs & FDCAN_IT_RX_FIFO0_MESSAGE_LOST)
@@ -135,7 +140,7 @@ void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan,uint32_t ErrorSta
     }
     if (can_id == CAN_NUM + 1)   //错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
     {
-        buzzer(600,75);
+        LED(0,200,200);//错误指示aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         return;
     }
     if (ErrorStatusITs & FDCAN_IT_BUS_OFF)

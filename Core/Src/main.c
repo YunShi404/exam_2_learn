@@ -30,15 +30,17 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
+#include <string.h>
 #include "led.h"
-#include<stdio.h>
-#include<string.h>
 #include "buzzer.h"
 #include "motor.h"
 #include "freertos_uart.h"
 #include "imu.h"
 #include "remote.h"
 #include "attitude.h"
+#include "can.h"
+#include "pid.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

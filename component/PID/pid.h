@@ -7,8 +7,6 @@
 
 typedef struct
 {
-    double goal;
-    double real;
 
     float p;
     float i;
@@ -27,8 +25,8 @@ typedef struct
     double output_limit;
 } PID_member;
 
-int PID_Init(PID_member *pid, float p, float i, float d, float dt, double integral_limit, double output_limit, double goal, double real);
+int PID_Init(PID_member *pid, float p, float i, float d, float dt, double integral_limit, double output_limit);
 int PID_Reset(PID_member *pid);
-double PID(PID_member *pid);
+double PID(PID_member *pid, double goal, double real);
 
 #endif //EXAM_2_LEARN_PID_H

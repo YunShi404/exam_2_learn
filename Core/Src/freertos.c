@@ -30,6 +30,7 @@
 #include "motor.h"
 #include "freertos_uart.h"
 #include "imu.h"
+#include "pid.h"
 #include "remote.h"
 /* USER CODE END Includes */
 
@@ -40,7 +41,14 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+PID_member speed_pid;
+remote_data_type remote_data_a;
+GM6020_motor_status GM6020_motor_status_a;
+int16_t goal = 0;
+int16_t real = 0;
+double output = 0;
+int statu = 0;
+int last_statu = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -126,54 +134,92 @@ void MX_FREERTOS_Init(void) {
   * @param  argument: Not used
   * @retval None
   */
+
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    // remote_data_type remote_data_a;
-    // Get_Remote_data(&remote_data_a);
-    // motor_control(GM6020_I_control_1234, 3 * remote_data_a.ch0, 0, 0, 0);
-    osDelay(1);
-  }
-  /* USER CODE END StartDefaultTask */
-}
 
-/* USER CODE BEGIN Header_StartTask02 */
-/**
-* @brief Function implementing the myTask02 thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartTask02 */
-void StartTask02(void *argument)
-{
-  /* USER CODE BEGIN StartTask02 */
-  Attitude attitude;
-  Attitude_Init(&attitude);
+  PID_Init(&speed_pid, 10, 0, 0, 0.001, 600, 10000);
   /* Infinite loop */
   for(;;)
   {
-    BMI088_Data_t data;
-    if (BMI088_update(&data))
+    GM6020_Get_Status(1, &GM6020_motor_status_a);
+    Get_Remote_data(&remote_data_a);
+    output = PID(&speed_pid, 3 * remote_data_a.ch0, GM6020_motor_status_a.speed_rpm);
+    if (can[1].online == 1 && remote_data_a.online == 1 && GM6020_motor_status_a.online == 1)
     {
-      Attitude_Update(
-          &attitude,
-          data.gyro_dps,
-          data.accel_g,
-          0.01f
-      );
+      if (remote_data_a.sw1 == 1 && remote_data_a.sw2 == 1)
+      {
+        motor_control(1 ,GM6020_I_control_1234, output, 0, 0, 0);
+        statu = 1;
+      }
+      else
+      {
+        motor_control(1 ,GM6020_I_control_1234, 0, 0, 0, 0);
+        statu = 0;
+      }
     }
-    UART_printf_Transmit(1, "%f, %f, %f\n", attitude.roll, attitude.pitch, attitude.yaw);
-    osDelay(10);
-  }
-  /* USER CODE END StartTask02 */
+    else
+    {
+      motor_control(1 ,GM6020_I_control_1234, 0, 0, 0, 0);
+      statu = -1;
+    }
+
+    if (last_statu != statu)
+    {
+      if (statu == 0)
+      {
+        LED(0,200,0);
+      }
+      if (statu == 1)
+      {
+        LED(0,0,200);
+      }
+      if (statu == -1)
+      {
+        LED(200,0,0);
+      }
+    }
+      last_statu = statu;
+      osDelay(1);
+    }
+    /* USER CODE END StartDefaultTask */
 }
 
-/* Private application code --------------------------------------------------*/
-/* USER CODE BEGIN Application */
+  /* USER CODE BEGIN Header_StartTask02 */
+  /**
+  * @brief Function implementing the myTask02 thread.
+  * @param argument: Not used
+  * @retval None
+  */
+  /* USER CODE END Header_StartTask02 */
+  void StartTask02(void *argument)
+  {
+    /* USER CODE BEGIN StartTask02 */
+    // Attitude attitude;
+    // Attitude_Init(&attitude);
+    /* Infinite loop */
+    for(;;)
+    {
+      // BMI088_Data_t data;
+      // if (BMI088_update(&data))
+      // {
+      //   Attitude_Update(
+      //       &attitude,
+      //       data.gyro_dps,
+      //       data.accel_g,
+      //       0.01f
+      //   );
+      // }
+      goal = 3 * remote_data_a.ch0;
+      real = GM6020_motor_status_a.speed_rpm;
+      UART_printf_Transmit(1, "%d, %f, %d, %d, %d, %d\n", goal, output, real, can[1].online, remote_data_a.online, GM6020_motor_status_a.online/*attitude.roll, attitude.pitch, attitude.yaw*/);
+      osDelay(20);
+    }
+    /* USER CODE END StartTask02 */
+  }
+  /* Private application code --------------------------------------------------*/
+  /* USER CODE BEGIN Application */
 
-/* USER CODE END Application */
-
+  /* USER CODE END Application */

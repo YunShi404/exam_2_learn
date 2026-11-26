@@ -88,6 +88,7 @@ int UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size)
             //         TX_BUF_SIZE - (len - Device_List[id].TX_BUF_tail);
             // }
             Device_List[id].TX_DMA_busy = 0;
+            buzzer(1000,75);
             return -3;
         }
         else return 1;
@@ -96,6 +97,7 @@ int UART_DMA_Transmit(UART_ID id, uint8_t *data, uint32_t size)
     else
     {
         taskEXIT_CRITICAL();
+        buzzer(1000,75);
         return -4;
     }
 }
@@ -175,7 +177,11 @@ int UART_printf_Transmit(UART_ID id, const char* format, ...)
         int back = UART_DMA_Transmit(id, (uint8_t *)buffer, (uint16_t)len);
         return back;
     }
-    else return -6;
+    else
+    {
+        buzzer(1000,75);
+        return -6;
+    }
 }
 
 
@@ -212,7 +218,6 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t size)
     else
     {
         Device_List[id].uart_rx_lost += 1;
-        LED(200,0,0);//可接受错误指示AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
         HAL_UARTEx_ReceiveToIdle_DMA(huart, Device_List[id].rx_buffer[Device_List[id].rx_buffer_use], rx_buffer_size);
     }
 }
@@ -232,6 +237,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 
     if (id == Device_num + 1)
     {
+        buzzer(1000,75);
         return;
     }
 
